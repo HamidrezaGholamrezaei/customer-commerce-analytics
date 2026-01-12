@@ -1,0 +1,65 @@
+# ========================
+# ETL Configuration
+# ========================
+
+project:
+  name: Customer 360 Commerce Analytics
+  version: 1.0.0
+
+paths:
+  processed_dir: data/processed
+
+data_source:
+  csv_path: data/raw/order_dataset.csv
+  delimiter: ","
+  encoding: "utf-8"
+  date_column: "Date"
+  date_format: "%d/%m/%Y"
+
+postgres:
+  host: localhost
+  port: 5432
+  database: c360db
+  user: c360user
+  password: ""
+  schema: c360
+
+pipeline:
+  chunk_size: 5000
+  dry_run: false
+  canonicalize:
+    item_attributes: mode
+    category: true
+
+validation:
+  max_error_rate: 0.01    # up to 1% rows can be dropped
+  tolerance: 0.02   # per-row tolerance for validation
+  checks:
+    revenue_balance: true
+    overall_balance: true
+    quantity_balance: true
+    refunded_nonpositive: true
+
+logging:
+  log_to_file: true
+  log_file_path: logs/etl_run.log
+  level: "INFO"
+
+column_map:
+  item_name: "Item Name"
+  category: "Category"
+  version: "Version"
+  item_code: "Item Code"
+  item_id: "Item ID"  
+  buyer_id: "Buyer ID"
+  transaction_id: "Transaction ID"
+  date: "Date"
+  final_quantity: "Final Quantity"
+  total_revenue: "Total Revenue"
+  price_reductions: "Price Reductions"
+  refunds: "Refunds"
+  final_revenue: "Final Revenue"
+  sales_tax: "Sales Tax"
+  overall_revenue: "Overall Revenue"
+  refunded_item_count: "Refunded Item Count"
+  purchased_item_count: "Purchased Item Count"

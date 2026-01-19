@@ -350,3 +350,60 @@ enriched AS (
 )
 SELECT *
 FROM enriched;
+
+-- ------------------------------------------------------------
+-- View: vw_promo_revenue_daily
+-- Promo vs non-promo revenue by day
+-- ------------------------------------------------------------
+DROP VIEW IF EXISTS c360.vw_promo_revenue_daily CASCADE;
+
+CREATE VIEW c360.vw_promo_revenue_daily AS
+WITH flags AS (
+    SELECT TRUE  AS is_promo
+    UNION ALL
+    SELECT FALSE AS is_promo
+),
+agg AS (
+    SELECT
+        f.date_key,
+        (f.price_reductions <> 0) AS is_promo,
+        SUM(f.final_revenue) AS revenue,
+        COUNT(DISTINCT f.transaction_id) AS orders,
+        SUM(f.purchased_item_count) AS purchased_qty,
+        ABS(SUM(f.refunded_item_count)) AS refunded_qty
+    FROM c360.fact_sales f
+    GROUP BY
+        f.date_key,
+        (f.price_reductions <> 0)
+),
+spine AS (
+    SELECT
+        v.date_key,
+        v.full_date,
+        v.year,
+        v.month,
+        v.year_month,
+        v.month_start,
+        v.month_end,
+        fl.is_promo
+    FROM c360.vw_date v
+    CROSS JOIN flags fl
+)
+SELECT
+    s.date_key,
+    s.full_date,
+    s.year,
+    s.month,
+    s.year_month,
+    s.month_start,
+    s.month_end,
+    s.is_promo,
+    COALESCE(a.revenue, 0) AS revenue,
+    COALESCE(a.orders, 0) AS orders,
+    COALESCE(a.purchased_qty, 0) AS purchased_qty,
+    COALESCE(a.refunded_qty, 0) AS refunded_qty
+FROM spine s
+LEFT JOIN agg a
+  ON a.date_key = s.date_key
+ AND a.is_promo = s.is_promo;
+ 
